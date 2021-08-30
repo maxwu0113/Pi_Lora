@@ -111,6 +111,7 @@ class LoRaRcvCont(LoRa):
 
         print("open sensor dir")
         # save file
+        os.system('[ ! -d "/home/pi/sensor_data/" ] && mkdir "/home/pi/sensor_data/"')
         os.system('[ ! -d "/home/pi/sensor_data/' + n_id + '" ] && mkdir "/home/pi/sensor_data/' + n_id + '"')
         dir_path = "/home/pi/sensor_data/" + n_id + "/"
         save_path = dir_path + today
