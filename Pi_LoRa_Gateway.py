@@ -9,11 +9,11 @@ import sys
 BOARD.setup()
 
 
-class Node_Data():
-    def __init__(self, id: bytes, crc: bytes, messager: bytes):
-        self.node_id = id
-        self.crc_code = crc
-        self.data = messager
+class Receive_Data():
+    def __init__(self,receive):
+        self.node_id = receive[1]
+        self.crc_code = bytes(receive[2:6])
+        self.data = bytes(receive[6:])
         self.out_data = ""
 
     def TX_string(self, data: str):
@@ -38,6 +38,15 @@ class LoRaRcvCont(LoRa):
             rssi_value = self.get_rssi_value()
             status = self.get_modem_status()
             sys.stdout.flush()
+    
+    def crc_check(self,receive: Receive_Data):
+        data_crc = bytearray(hex(binascii.crc32(receive.data))[2:].encode())
+        if len(data_crc) < 8:
+            for i in range(8 - len(data_crc)):
+                data_crc = bytearray("0".encode()) + data_crc
+
+        receive.crc_code = binascii.b2a_hex(receive.crc_code)
+        return data_crc == receive.crc_code
 
     def on_rx_done(self):
         print("\nReceived: ")
@@ -46,34 +55,28 @@ class LoRaRcvCont(LoRa):
         print(payload)
         print(bytes(payload).decode("utf-8", 'ignore'))
         if payload[0] == self.gateway_id:
-            get_data = Node_Data(payload[1], bytes(payload[2:6]), bytes(payload[6:]))
+            receive = Receive_Data(payload)
             print("checking CRC")
-            data_crc = bytearray(hex(binascii.crc32(get_data.data))[2:].encode())
-            if len(data_crc) < 8:
-                for i in range(8 - len(data_crc)):
-                    data_crc = bytearray("0".encode()) + data_crc
-
-            get_data.crc_code = binascii.b2a_hex(get_data.crc_code)
-            get_data.data = get_data.data[:-2].decode("utf-8", 'ignore')
-            if data_crc == get_data.crc_code:
+            if self.crc_check(receive):
+                receive.data = receive.data[:-2].decode("utf-8", 'ignore')
                 print("CRC check success")
-                if get_data.data == "KA" or get_data.data == "READY":
-                    get_data.TX_string("CMD_AC")
-                    self.lora_send(get_data)
+                if receive.data == "KA" or receive.data == "READY":
+                    receive.TX_string("CMD_AC")
+                    self.lora_send_no_crc(receive)
                     print("Sand CMD_AC")
-                elif get_data.data == "GW":
+                elif receive.data == "GW":
                     print("Waiting for GPS")
-                elif get_data.data == "GK":
+                elif receive.data == "GK":
                     print("GPS Ready")
 
                 else:
-                    get_data.TX_string("RECEIVE")
-                    self.save_data(get_data)
-                    self.lora_send(get_data)
+                    receive.TX_string("RECEIVE")
+                    self.save_data(receive)
+                    self.lora_send_no_crc(receive)
                     print("Sand RECEIVE")
             else:
                 print("CRC check fail")
-                print("CRC: ", get_data.crc_code)
+                print("CRC: ", receive.crc_code)
                 print("Data_CRC: ", data_crc)
 
         else:
@@ -81,7 +84,6 @@ class LoRaRcvCont(LoRa):
             print("Local_ID: ", self.gateway_id)
             print("Message_ID: ", payload[0])
 
-        sleep(0.5)
         self.set_mode(MODE.RXCONT)
 
     def on_tx_done(self):
@@ -92,13 +94,23 @@ class LoRaRcvCont(LoRa):
         self.reset_ptr_rx()
         self.set_mode(MODE.RXCONT)
 
-    def lora_send(self, output_data: Node_Data):
+    def lora_send_no_crc(self, output_data: Receive_Data):
         TX_data = bytes([output_data.node_id]) + bytes([self.gateway_id]) + bytes([1]) + bytes(
             [len(output_data.out_data)]) + output_data.out_data.encode()
         self.write_payload(list(TX_data))
         self.set_mode(MODE.TX)
+        
+    def lora_send_with_crc(self,output: Receive_Data):
+        crc = binascii.crc32(output.out_data.encode())
+        crc1 = (crc & 0xff000000) >> 24
+        crc2 = (crc & 0xff0000) >> 16
+        crc3 = (crc & 0xff00) >> 8
+        crc4 = (crc & 0xff)
+        TX_data = bytes([output_data.node_id]) + bytes([self.gateway_id]) + bytes([crc1])+ bytes([crc2])+bytes([crc3])+bytes([crc4]) + output_data.out_data.encode()
+        self.write_payload(list(TX_data))
+        self.set_mode(MODE.TX)
 
-    def save_data(self, data: Node_Data):
+    def save_data(self, data: Receive_Data):
         n_id = str(data.node_id)
         n_data = data.data
 
@@ -111,9 +123,9 @@ class LoRaRcvCont(LoRa):
 
         print("open sensor dir")
         # save file
-        os.system('[ ! -d "/home/pi/sensor_data/" ] && mkdir "/home/pi/sensor_data/"')
-        os.system('[ ! -d "/home/pi/sensor_data/' + n_id + '" ] && mkdir "/home/pi/sensor_data/' + n_id + '"')
-        dir_path = "/home/pi/sensor_data/" + n_id + "/"
+        os.system('[ ! -d "/home/pi/Documents/sensor_data/" ] && sudo mkdir "/home/pi/Documents/sensor_data/"')
+        os.system('[ ! -d "/home/pi/Documents/sensor_data/' + n_id + '" ] && sudo mkdir "/home/pi/Documents/sensor_data/' + n_id + '"')
+        dir_path = "/home/pi/Documents/sensor_data/" + n_id + "/"
         save_path = dir_path + today
         print(save_path)
         data_file = open(save_path, 'a')
