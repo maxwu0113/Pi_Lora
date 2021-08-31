@@ -106,7 +106,7 @@ class LoRaRcvCont(LoRa):
         crc2 = (crc & 0xff0000) >> 16
         crc3 = (crc & 0xff00) >> 8
         crc4 = (crc & 0xff)
-        TX_data = bytes([output_data.node_id]) + bytes([self.gateway_id]) + bytes([crc1])+ bytes([crc2])+bytes([crc3])+bytes([crc4]) + output_data.out_data.encode()
+        TX_data = bytes([output.node_id]) + bytes([self.gateway_id]) + bytes([crc1])+ bytes([crc2])+bytes([crc3])+bytes([crc4]) + output_data.out_data.encode()
         self.write_payload(list(TX_data))
         self.set_mode(MODE.TX)
 
