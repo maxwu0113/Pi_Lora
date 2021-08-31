@@ -10,7 +10,7 @@ BOARD.setup()
 
 
 class Receive_Data():
-    def __init__(self,receive):
+    def __init__(self, receive):
         self.node_id = receive[1]
         self.crc_code = bytes(receive[2:6])
         self.data = bytes(receive[6:])
@@ -38,8 +38,8 @@ class LoRaRcvCont(LoRa):
             rssi_value = self.get_rssi_value()
             status = self.get_modem_status()
             sys.stdout.flush()
-    
-    def crc_check(self,receive: Receive_Data):
+
+    def crc_check(self, receive: Receive_Data):
         data_crc = bytearray(hex(binascii.crc32(receive.data))[2:].encode())
         if len(data_crc) < 8:
             for i in range(8 - len(data_crc)):
@@ -77,7 +77,7 @@ class LoRaRcvCont(LoRa):
             else:
                 print("CRC check fail")
                 print("CRC: ", receive.crc_code)
-                print("Data_CRC: ", data_crc)
+                print("Data_CRC: ", bytearray(hex(binascii.crc32(receive.data))[2:].encode()))
 
         else:
             print("Message not for me")
@@ -99,14 +99,15 @@ class LoRaRcvCont(LoRa):
             [len(output_data.out_data)]) + output_data.out_data.encode()
         self.write_payload(list(TX_data))
         self.set_mode(MODE.TX)
-        
-    def lora_send_with_crc(self,output: Receive_Data):
+
+    def lora_send_with_crc(self, output: Receive_Data):
         crc = binascii.crc32(output.out_data.encode())
         crc1 = (crc & 0xff000000) >> 24
         crc2 = (crc & 0xff0000) >> 16
         crc3 = (crc & 0xff00) >> 8
         crc4 = (crc & 0xff)
-        TX_data = bytes([output.node_id]) + bytes([self.gateway_id]) + bytes([crc1])+ bytes([crc2])+bytes([crc3])+bytes([crc4]) + output_data.out_data.encode()
+        TX_data = bytes([output.node_id]) + bytes([self.gateway_id]) + bytes([crc1]) + bytes([crc2]) + bytes(
+            [crc3]) + bytes([crc4]) + output.out_data.encode()
         self.write_payload(list(TX_data))
         self.set_mode(MODE.TX)
 
@@ -124,7 +125,8 @@ class LoRaRcvCont(LoRa):
         print("open sensor dir")
         # save file
         os.system('[ ! -d "/home/pi/Documents/sensor_data/" ] && sudo mkdir "/home/pi/Documents/sensor_data/"')
-        os.system('[ ! -d "/home/pi/Documents/sensor_data/' + n_id + '" ] && sudo mkdir "/home/pi/Documents/sensor_data/' + n_id + '"')
+        os.system(
+            '[ ! -d "/home/pi/Documents/sensor_data/' + n_id + '" ] && sudo mkdir "/home/pi/Documents/sensor_data/' + n_id + '"')
         dir_path = "/home/pi/Documents/sensor_data/" + n_id + "/"
         save_path = dir_path + today
         print(save_path)
