@@ -60,7 +60,6 @@ class LoRaRcvCont(LoRa):
             data_time = report.time + "," + str(report.lon) + "," + str(report.lat)
             if not self.activte:
                 if time.time() - last_time > 10:
-                    self.runtime = 0
                     self.gateway.TX_string("KA")
                     self.lora_send_with_crc(self.gateway)
                     print("KA")
