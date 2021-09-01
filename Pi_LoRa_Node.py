@@ -59,7 +59,7 @@ class LoRaRcvCont(LoRa):
                 report = session.next()
             data_time = report.time + "," + str(report.lon) + "," + str(report.lat)
             if not self.activte:
-                if time.time() - last_time > 9:
+                if time.time() - last_time > 10:
                     self.runtime = 0
                     self.gateway.TX_string("KA")
                     self.lora_send_with_crc(self.gateway)
@@ -67,7 +67,7 @@ class LoRaRcvCont(LoRa):
                     self.set_mode(MODE.RXCONT)
                     last_time = time.time()
             else:
-                if (self.runtime == 0 and self.receive) or time.time() - last_time >= 30:
+                if  self.receive and time.time() - last_time >= 30:
                     self.data = data_time
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
@@ -75,10 +75,12 @@ class LoRaRcvCont(LoRa):
                     print(self.data)
                     last_time = time.time()
                     timeout = time.time()
-                elif time.time() - timeout > 4 and not self.receive:
+                    self.set_mode(MODE.RXCONT)
+                elif time.time() - timeout > 5 and not self.receive:
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
                     timeout = time.time()
+                    self.set_mode(MODE.RXCONT)
 
     def crc_check(self, receive: Receive_Data):
         data_crc = bytearray(hex(binascii.crc32(receive.data))[2:].encode())
@@ -116,13 +118,13 @@ class LoRaRcvCont(LoRa):
             print("Local_ID: ", self.local_id)
             print("Message_ID: ", payload[0])
 
-        self.set_mode(MODE.RXCONT)
+        self.set_mode(MODE.STDBY)
 
     def on_tx_done(self):
         self.set_mode(MODE.STDBY)
         self.clear_irq_flags(TxDone=1)
         sys.stdout.flush()
-        self.set_mode(MODE.RXCONT)
+        self.set_mode(MODE.RXSINGLE)
 
     def on_cad_done(self):
         print("\non_CadDone")
