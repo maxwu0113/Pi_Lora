@@ -63,7 +63,7 @@ class LoRaRcvCont(LoRa):
                     self.gateway.TX_string("KA")
                     self.lora_send_with_crc(self.gateway)
                     print("KA")
-                    self.set_mode(MODE.RXCONT)
+                    self.set_mode(MODE.RXSINGLE)
             else:
                 if (self.runtime == 0 and self.receive) or timeout_count >= 5:
                     self.data = data_time
@@ -72,13 +72,13 @@ class LoRaRcvCont(LoRa):
                     self.receive = False
                     print(self.data)
                     timeout_count = 0
-                    self.set_mode(MODE.RXCONT)
+                    self.set_mode(MODE.RXSINGLE)
                 elif self.runtime > 4 and not self.receive:
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
                     timeout_count += 1
                     self.runtime = 0
-                    self.set_mode(MODE.RXCONT)
+                    self.set_mode(MODE.RXSINGLE)
 
             sleep(1)
             self.runtime += 1
@@ -119,7 +119,7 @@ class LoRaRcvCont(LoRa):
             print("Local_ID: ", self.local_id)
             print("Message_ID: ", payload[0])
 
-        self.set_mode(MODE.RXCONT)
+        self.set_mode(MODE.STDBY)
 
     def on_tx_done(self):
         self.set_mode(MODE.STDBY)
