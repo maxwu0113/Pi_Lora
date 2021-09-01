@@ -29,7 +29,6 @@ class LoRaRcvCont(LoRa):
     gateway = Receive_Data([local_id, gateway_id, 0, 0, 0, 0, 0])
     activte = False
     receive = False
-    runtime = 0
     data = ""
 
     def __init__(self, verbose=False):
@@ -52,35 +51,33 @@ class LoRaRcvCont(LoRa):
         self.gateway.TX_string("READY")
         self.lora_send_with_crc(self.gateway)
         self.set_mode(MODE.TX)
-        timeout_count = 0
+        last_time = time.time()
         while True:
             report = session.next()
             while report['class'] != 'TPV':
                 report = session.next()
             data_time = report.time + "," + str(report.lon) + "," + str(report.lat)
             if not self.activte:
-                if self.runtime > 9:
+                if time.time() - last_time > 9:
                     self.runtime = 0
                     self.gateway.TX_string("KA")
                     self.lora_send_with_crc(self.gateway)
                     print("KA")
                     self.set_mode(MODE.RXCONT)
+                    last_time = time.time()
             else:
-                if (self.runtime == 0 and self.receive) or timeout_count >= 5:
+                if (self.runtime == 0 and self.receive) or time.time() - last_time >= 30:
                     self.data = data_time
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
                     self.receive = False
                     print(self.data)
-                    timeout_count = 0
-                elif self.runtime > 4 and not self.receive:
+                    last_time = time.time()
+                    timeout = time.time()
+                elif time.time() - timeout > 4 and not self.receive:
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
-                    timeout_count += 1
-                    self.runtime = 0
-
-            sleep(1)
-            self.runtime += 1
+                    timeout = time.time()
 
     def crc_check(self, receive: Receive_Data):
         data_crc = bytearray(hex(binascii.crc32(receive.data))[2:].encode())
