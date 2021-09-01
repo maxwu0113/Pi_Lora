@@ -65,7 +65,6 @@ class LoRaRcvCont(LoRa):
                     print("KA")
                     self.set_mode(MODE.RXCONT)
             else:
-                print("Start: ")
                 if (self.runtime == 0 and self.receive) or timeout_count >= 5:
                     self.data = data_time
                     self.gateway.TX_string(self.data)
