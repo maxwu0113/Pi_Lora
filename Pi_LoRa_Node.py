@@ -58,14 +58,14 @@ class LoRaRcvCont(LoRa):
                 report = session.next()
             data_time = report.time + "," + str(report.lon) + "," + str(report.lat)
             if not self.activte:
-                if time.time() - last_time > 10:
+                if time.time() - last_time > 9:
                     self.gateway.TX_string("KA")
                     self.lora_send_with_crc(self.gateway)
                     print("KA")
                     self.set_mode(MODE.RXCONT)
                     last_time = time.time()
             else:
-                if  self.receive and time.time() - last_time >= 30:
+                if  self.receive and time.time() - last_time > 29:
                     self.data = data_time
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
@@ -74,7 +74,7 @@ class LoRaRcvCont(LoRa):
                     last_time = time.time()
                     timeout = time.time()
                     self.set_mode(MODE.RXCONT)
-                elif time.time() - timeout > 5 and not self.receive:
+                elif time.time() - timeout > 4 and not self.receive:
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
                     timeout = time.time()
