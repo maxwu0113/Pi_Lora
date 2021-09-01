@@ -54,6 +54,7 @@ class LoRaRcvCont(LoRa):
         self.set_mode(MODE.TX)
         timeout_count = 0
         while True:
+            report = session.next()
             while report['class'] != 'TPV':
                 report = session.next()
             data_time = report.time + "," + str(report.lon) + "," + str(report.lat)
