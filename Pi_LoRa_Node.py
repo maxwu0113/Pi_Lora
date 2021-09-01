@@ -73,11 +73,13 @@ class LoRaRcvCont(LoRa):
                     self.receive = False
                     print(self.data)
                     timeout_count = 0
+                    self.set_mode(MODE.RXCONT)
                 elif self.runtime > 4 and not self.receive:
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
                     timeout_count += 1
                     self.runtime = 0
+                    self.set_mode(MODE.RXCONT)
 
             sleep(1)
             self.runtime += 1
