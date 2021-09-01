@@ -62,7 +62,7 @@ class LoRaRcvCont(LoRa):
                 print("CRC check success")
                 if receive.data == "KA" or receive.data == "READY":
                     receive.TX_string("CMD_AC")
-                    self.lora_send_no_crc(receive)
+                    self.lora_send_with_crc(receive)
                     print("Sand CMD_AC")
                 elif receive.data == "GW":
                     print("Waiting for GPS")
@@ -72,7 +72,7 @@ class LoRaRcvCont(LoRa):
                 else:
                     receive.TX_string("RECEIVE")
                     self.save_data(receive)
-                    self.lora_send_no_crc(receive)
+                    self.lora_send_with_crc(receive)
                     print("Sand RECEIVE")
             else:
                 print("CRC check fail")

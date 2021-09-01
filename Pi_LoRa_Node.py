@@ -142,10 +142,6 @@ class LoRaRcvCont(LoRa):
         print("\non_PayloadCrcError")
         print(self.get_irq_flags())
 
-    def on_fhss_change_channel(self):
-        print("\non_FhssChangeChannel")
-        print(self.get_irq_flags())
-
     def lora_send_no_crc(self, output_data: Receive_Data):
         TX_data = bytes([output_data.ID]) + bytes([self.local_id]) + bytes([1]) + bytes(
             [len(output_data.out_data)]) + output_data.out_data.encode()
