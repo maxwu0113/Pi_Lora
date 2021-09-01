@@ -13,7 +13,7 @@ session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
 
 
 class Receive_Data():
-    def __init__(self, receive = [0,0,0,0,0,0,0]):
+    def __init__(self, receive=[0, 0, 0, 0, 0, 0, 0]):
         self.ID = receive[1]
         self.crc_code = bytes(receive[2:6])
         self.data = bytes(receive[6:])
@@ -26,7 +26,7 @@ class Receive_Data():
 class LoRaRcvCont(LoRa):
     local_id = 0xa1
     gateway_id = 0xe1
-    gateway = Receive_Data([local_id,gateway_id,0,0,0,0,0])
+    gateway = Receive_Data([local_id, gateway_id, 0, 0, 0, 0, 0])
     activte = False
     receive = False
     runtime = 0
@@ -48,17 +48,17 @@ class LoRaRcvCont(LoRa):
             print("Waiting for GPS")
             sleep(1)
             report = session.next()
-            
+
         self.gateway.TX_string("READY")
         self.lora_send_with_crc(self.gateway)
         self.set_mode(MODE.TX)
         timeout = True
         while True:
             while report['class'] != 'TPV':
-                    report = session.next()
-            time = report.time+report.lon+report.lat
+                report = session.next()
+            data_time = report.time + report.lon + report.lat
             if not self.activte:
-                if self.runtime > 9 :
+                if self.runtime > 9:
                     self.runtime = 0
                     self.gateway.TX_string("KA")
                     self.lora_send_with_crc(self.gateway)
@@ -67,7 +67,7 @@ class LoRaRcvCont(LoRa):
             else:
                 print("Start: ")
                 if self.runtime == 0 and self.receive:
-                    self.data = time
+                    self.data = data_time
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
                     self.receive = False
@@ -75,7 +75,6 @@ class LoRaRcvCont(LoRa):
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
             self.runtime += 1
-            
 
     def crc_check(self, receive: Receive_Data):
         data_crc = bytearray(hex(binascii.crc32(receive.data))[2:].encode())
@@ -120,7 +119,6 @@ class LoRaRcvCont(LoRa):
         self.clear_irq_flags(TxDone=1)
         sys.stdout.flush()
         self.set_mode(MODE.RXCONT)
-        
 
     def on_cad_done(self):
         print("\non_CadDone")
@@ -141,7 +139,7 @@ class LoRaRcvCont(LoRa):
     def on_fhss_change_channel(self):
         print("\non_FhssChangeChannel")
         print(self.get_irq_flags())
-    
+
     def lora_send_no_crc(self, output_data: Receive_Data):
         TX_data = bytes([output_data.ID]) + bytes([self.local_id]) + bytes([1]) + bytes(
             [len(output_data.out_data)]) + output_data.out_data.encode()
