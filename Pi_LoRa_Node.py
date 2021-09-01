@@ -79,6 +79,7 @@ class LoRaRcvCont(LoRa):
                     timeout_count += 1
                     self.runtime = 0
 
+            sleep(1)
             self.runtime += 1
 
     def crc_check(self, receive: Receive_Data):
