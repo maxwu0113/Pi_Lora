@@ -52,6 +52,7 @@ class LoRaRcvCont(LoRa):
         self.lora_send_with_crc(self.gateway)
         self.set_mode(MODE.TX)
         last_time = time.time()
+        timeout = time.time()
         while True:
             report = session.next()
             while report['class'] != 'TPV':
