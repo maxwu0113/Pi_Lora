@@ -157,7 +157,7 @@ class LoRaRcvCont(LoRa):
             [crc3]) + bytes([crc4]) + output.out_data.encode()
         self.write_payload(list(TX_data))
         self.set_mode(MODE.TX)
-        print("Send: ",TX_data.decode())
+        print("Send: ",TX_data.decode("utf-8", 'ignore'))
 
     def save_data(self, data: Receive_Data):
         n_id = str(data.ID)
