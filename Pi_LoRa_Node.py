@@ -52,7 +52,7 @@ class LoRaRcvCont(LoRa):
         self.gateway.TX_string("READY")
         self.lora_send_with_crc(self.gateway)
         self.set_mode(MODE.TX)
-        timeout = True
+        timeout_count = 0
         while True:
             while report['class'] != 'TPV':
                 report = session.next()
@@ -66,14 +66,19 @@ class LoRaRcvCont(LoRa):
                     self.set_mode(MODE.RXCONT)
             else:
                 print("Start: ")
-                if self.runtime == 0 and self.receive:
+                if (self.runtime == 0 and self.receive) or timeout_count >= 5:
                     self.data = data_time
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
                     self.receive = False
+                    print(self.data)
+                    timeout_count = 0
                 elif self.runtime > 4 and not self.receive:
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
+                    timeout_count += 1
+                    self.runtime = 0
+
             self.runtime += 1
 
     def crc_check(self, receive: Receive_Data):
