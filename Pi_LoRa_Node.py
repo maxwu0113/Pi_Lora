@@ -56,7 +56,7 @@ class LoRaRcvCont(LoRa):
         while True:
             while report['class'] != 'TPV':
                 report = session.next()
-            data_time = report.time + report.lon + report.lat
+            data_time = report.time + "," + str(report.lon) + "," + str(report.lat)
             if not self.activte:
                 if self.runtime > 9:
                     self.runtime = 0
