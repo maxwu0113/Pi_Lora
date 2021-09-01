@@ -45,7 +45,6 @@ class LoRaRcvCont(LoRa):
             self.gateway.TX_string("GW")
             self.lora_send_with_crc(self.gateway)
             print("Waiting for GPS")
-            sleep(1)
             report = session.next()
 
         self.gateway.TX_string("READY")
