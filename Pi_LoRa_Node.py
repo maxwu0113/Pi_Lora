@@ -70,7 +70,7 @@ class LoRaRcvCont(LoRa):
                     self.set_mode(MODE.RXCONT)
                     last_time = time.time()
             else:
-                if self.receive and ser.in_waiting > 0:
+                if ser.in_waiting > 0:
                     line = ser.readline()
                     self.data = data_time + line.decode("utf-8", 'ignore')[:-2]
                     self.gateway.TX_string(self.data)
