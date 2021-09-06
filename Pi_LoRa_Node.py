@@ -8,13 +8,18 @@ import sys
 import gps
 import serial
 
+# serial port setup
 ser = serial.Serial('/dev/ttyUSB0', 9600)
 
+# lora hat pin setup
 BOARD.setup()
+
+# gps setup
 session = gps.gps("localhost", "2947")
 session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
 
 
+# data type
 class Receive_Data():
     def __init__(self, receive=[0, 0, 0, 0, 0, 0, 0]):
         self.ID = receive[1]
@@ -26,6 +31,7 @@ class Receive_Data():
         self.out_data = data
 
 
+# lora class
 class LoRaRcvCont(LoRa):
     local_id = 0xb1
     gateway_id = 0xe1
@@ -34,12 +40,14 @@ class LoRaRcvCont(LoRa):
     receive = False
     data = ""
 
+    # lora setup
     def __init__(self, verbose=False):
         super(LoRaRcvCont, self).__init__(verbose)
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([0] * 6)
         self.set_freq(433.0)
 
+    # node start
     def start(self):
         print("Pi LoRaWan Node Start!")
         self.reset_ptr_rx()
@@ -55,6 +63,7 @@ class LoRaRcvCont(LoRa):
         self.set_mode(MODE.TX)
         last_time = time.time()
         timeout = time.time()
+
         while True:
             report = session.next()
             while report['class'] != 'TPV':
@@ -62,6 +71,7 @@ class LoRaRcvCont(LoRa):
             date = report.time[0:4] + "," + report.time[5:7] + "," + report.time[8:10] + ","
             gps_time = str(int(report.time[11:13]) + 8) + "," + report.time[14:16] + "," + report.time[17:19] + ","
             data_time = date + gps_time + str(report.lon) + "," + str(report.lat) + ","
+
             if not self.activte:
                 if time.time() - last_time > 9:
                     self.gateway.TX_string("KA")
@@ -77,11 +87,19 @@ class LoRaRcvCont(LoRa):
                     self.lora_send_with_crc(self.gateway)
                     self.receive = False
                     print(self.data)
+                    self.save_data(self.data)
                     last_time = time.time()
                     timeout = time.time()
                     self.set_mode(MODE.RXCONT)
+
                 elif time.time() - timeout > 4 and not self.receive:
                     self.gateway.TX_string(self.data)
+                    self.lora_send_with_crc(self.gateway)
+                    timeout = time.time()
+                    self.set_mode(MODE.RXCONT)
+
+                elif self.receive and time.time() - timeout > 29:
+                    self.gateway.TX_string("serial no data")
                     self.lora_send_with_crc(self.gateway)
                     timeout = time.time()
                     self.set_mode(MODE.RXCONT)
@@ -165,9 +183,7 @@ class LoRaRcvCont(LoRa):
         self.set_mode(MODE.TX)
         print("Send: ", TX_data.decode("utf-8", 'ignore'))
 
-    def save_data(self, data: Receive_Data):
-        n_id = str(data.ID)
-        n_data = data.data
+    def save_data(self, data):
 
         # open file to save sensor data
         print("Creat sensor data dir")
@@ -179,9 +195,7 @@ class LoRaRcvCont(LoRa):
         print("open sensor dir")
         # save file
         os.system('[ ! -d "/home/pi/Documents/sensor_data/" ] && sudo mkdir "/home/pi/Documents/sensor_data/"')
-        os.system(
-            '[ ! -d "/home/pi/Documents/sensor_data/' + n_id + '" ] && sudo mkdir "/home/pi/Documents/sensor_data/' + n_id + '"')
-        dir_path = "/home/pi/Documents/sensor_data/" + n_id + "/"
+        dir_path = "/home/pi/Documents/sensor_data/"
         save_path = dir_path + today
         print(save_path)
         data_file = open(save_path, 'a')
@@ -194,7 +208,7 @@ class LoRaRcvCont(LoRa):
         old_data = temp_file.read()
         old_data = old_data[:-1]
         temp_file.close()
-        if old_data == n_data:
+        if old_data == data:
             return 0
 
         # get date string for saving the save time
@@ -205,15 +219,15 @@ class LoRaRcvCont(LoRa):
             time_str += str(now_time)
 
         # murge sensor data and saving time
-        write_date = today + " " + time_str + "  "
+        write_date = today + " " + time_str + " "
         print("Saveing data")
         data_file.write(write_date)
-        data_file.write(n_data + "\r\n")
+        data_file.write(data + "\r\n")
         data_file.close()
 
         # save last data to temp file
         temp_file = open(temp_path, 'w')
-        temp_file.write(n_data + "\r\n")
+        temp_file.write(data + "\r\n")
         temp_file.close()
 
 
