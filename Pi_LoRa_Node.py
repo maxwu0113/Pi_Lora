@@ -59,8 +59,8 @@ class LoRaRcvCont(LoRa):
             report = session.next()
             while report['class'] != 'TPV':
                 report = session.next()
-            date = report.time[0:4] + "," +  report.time[5:7] + "," + report.time[8:10] + ","
-            gps_time = str(int(report.time[11:13]) + 8 ) + "," + report.time[14:16] + "," + report.time[17:19] +  ","
+            date = report.time[0:4] + "," + report.time[5:7] + "," + report.time[8:10] + ","
+            gps_time = str(int(report.time[11:13]) + 8) + "," + report.time[14:16] + "," + report.time[17:19] + ","
             data_time = date + gps_time + str(report.lon) + "," + str(report.lat) + ","
             if not self.activte:
                 if time.time() - last_time > 9:
@@ -70,7 +70,7 @@ class LoRaRcvCont(LoRa):
                     self.set_mode(MODE.RXCONT)
                     last_time = time.time()
             else:
-                if  self.receive and ser.in_waiting >0:
+                if self.receive and ser.in_waiting > 0:
                     line = ser.readline()
                     self.data = data_time + line.decode("utf-8", 'ignore')[:-2]
                     self.gateway.TX_string(self.data)
@@ -163,7 +163,7 @@ class LoRaRcvCont(LoRa):
             [crc3]) + bytes([crc4]) + output.out_data.encode()
         self.write_payload(list(TX_data))
         self.set_mode(MODE.TX)
-        print("Send: ",TX_data.decode("utf-8", 'ignore'))
+        print("Send: ", TX_data.decode("utf-8", 'ignore'))
 
     def save_data(self, data: Receive_Data):
         n_id = str(data.ID)
