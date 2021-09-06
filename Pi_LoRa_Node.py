@@ -6,6 +6,9 @@ import os
 import time
 import sys
 import gps
+import serial
+
+ser = serial.Serial('/dev/ttyUSB0', 9600)
 
 BOARD.setup()
 session = gps.gps("localhost", "2947")
@@ -24,7 +27,7 @@ class Receive_Data():
 
 
 class LoRaRcvCont(LoRa):
-    local_id = 0xa1
+    local_id = 0xb1
     gateway_id = 0xe1
     gateway = Receive_Data([local_id, gateway_id, 0, 0, 0, 0, 0])
     activte = False
@@ -56,7 +59,9 @@ class LoRaRcvCont(LoRa):
             report = session.next()
             while report['class'] != 'TPV':
                 report = session.next()
-            data_time = report.time + "," + str(report.lon) + "," + str(report.lat)
+            date = report.time[0:4] + "," +  report.time[5:7] + "," + report.time[8:10] + ","
+            gps_time = str(int(report.time[11:13]) + 8 ) + "," + report.time[14:16] + "," + report.time[17:19] +  ","
+            data_time = date + gps_time + str(report.lon) + "," + str(report.lat) + ","
             if not self.activte:
                 if time.time() - last_time > 9:
                     self.gateway.TX_string("KA")
@@ -65,8 +70,9 @@ class LoRaRcvCont(LoRa):
                     self.set_mode(MODE.RXCONT)
                     last_time = time.time()
             else:
-                if  self.receive and time.time() - last_time > 29:
-                    self.data = data_time
+                if  self.receive and ser.in_waiting >0:
+                    line = ser.readline()
+                    self.data = data_time + line.decode("utf-8", 'ignore')[:-2]
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
                     self.receive = False
