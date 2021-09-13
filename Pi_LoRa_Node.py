@@ -183,7 +183,6 @@ class LoRaRcvCont(LoRa):
         print("Send: ", TX_data.decode("utf-8", 'ignore'))
 
     def save_data(self, data):
-
         # open file to save sensor data
         print("Creat sensor data dir")
         today = str(time.localtime()[0])
