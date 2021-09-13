@@ -8,15 +8,16 @@ import sys
 import gps
 import serial
 
-#serial port setup
+# serial port setup
 ser = serial.Serial('/dev/ttyUSB0', 9600)
 
-#lora hat pin setup
+# lora hat pin setup
 BOARD.setup()
 
 # gps setup
 session = gps.gps("localhost", "2947")
 session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+
 
 # data type
 class Receive_Data():
@@ -29,6 +30,7 @@ class Receive_Data():
     def TX_string(self, data: str):
         self.out_data = data
 
+
 # lora class
 class LoRaRcvCont(LoRa):
     local_id = 0xb1
@@ -38,14 +40,14 @@ class LoRaRcvCont(LoRa):
     receive = False
     data = ""
 
-# lora setup
+    # lora setup
     def __init__(self, verbose=False):
         super(LoRaRcvCont, self).__init__(verbose)
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([0] * 6)
         self.set_freq(433.0)
 
-# node start
+    # node start
     def start(self):
         print("Pi LoRaWan Node Start!")
         self.reset_ptr_rx()
@@ -61,15 +63,15 @@ class LoRaRcvCont(LoRa):
         self.set_mode(MODE.TX)
         last_time = time.time()
         timeout = time.time()
-        
+
         while True:
             report = session.next()
             while report['class'] != 'TPV':
                 report = session.next()
-            date = report.time[0:4] + "," +  report.time[5:7] + "," + report.time[8:10] + ","
-            gps_time = str(int(report.time[11:13]) + 8 ) + "," + report.time[14:16] + "," + report.time[17:19] +  ","
+            date = report.time[0:4] + "," + report.time[5:7] + "," + report.time[8:10] + ","
+            gps_time = str(int(report.time[11:13]) + 8) + "," + report.time[14:16] + "," + report.time[17:19] + ","
             data_time = date + gps_time + str(report.lon) + "," + str(report.lat) + ","
-            
+
             if not self.activte:
                 if time.time() - last_time > 9:
                     self.gateway.TX_string("KA")
@@ -78,7 +80,7 @@ class LoRaRcvCont(LoRa):
                     self.set_mode(MODE.RXCONT)
                     last_time = time.time()
             else:
-                if  ser.in_waiting >0:
+                if ser.in_waiting > 0:
                     line = ser.readline()
                     self.data = data_time + line.decode("utf-8", 'ignore')[:-2]
                     self.gateway.TX_string(self.data)
@@ -89,14 +91,14 @@ class LoRaRcvCont(LoRa):
                     last_time = time.time()
                     timeout = time.time()
                     self.set_mode(MODE.RXCONT)
-                    
+
                 elif time.time() - timeout > 4 and not self.receive:
                     self.gateway.TX_string(self.data)
                     self.lora_send_with_crc(self.gateway)
                     timeout = time.time()
                     self.set_mode(MODE.RXCONT)
-                    
-                elif self.receive and time.time() - timeout >29:
+
+                elif self.receive and time.time() - timeout > 29:
                     self.gateway.TX_string("serial no data")
                     self.lora_send_with_crc(self.gateway)
                     timeout = time.time()
@@ -179,7 +181,7 @@ class LoRaRcvCont(LoRa):
             [crc3]) + bytes([crc4]) + output.out_data.encode()
         self.write_payload(list(TX_data))
         self.set_mode(MODE.TX)
-        print("Send: ",TX_data.decode("utf-8", 'ignore'))
+        print("Send: ", TX_data.decode("utf-8", 'ignore'))
 
     def save_data(self, data):
 
